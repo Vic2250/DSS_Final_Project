@@ -15,5 +15,5 @@
 
  3. 啟動UI
  ```python
- streamlit run index.py
+ python excute.py
  ```
