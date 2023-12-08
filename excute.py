@@ -16,7 +16,12 @@ time.sleep(2)
 streamlit_process = subprocess.Popen(streamlit_command, shell=True)
 print('[*]Streamlit app started...')
 
-# 等待 Streamlit 應用退出，然後關閉 FastAPI 伺服器
-streamlit_process.wait()
-fastapi_process.terminate()
-print('[*]Streamlit app closed...')
+try:
+    # 等待 Streamlit 應用退出
+    streamlit_process.wait()
+except:
+    pass
+finally:
+    # 確保 Streamlit 應用退出後，終止 FastAPI 伺服器的進程
+    fastapi_process.terminate()
+    fastapi_process.wait()  # 等待 FastAPI 伺服器的進程正確終止
