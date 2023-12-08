@@ -3,7 +3,7 @@
 ### 作業環境
 
  1. Anaconda: https://www.anaconda.com/
- 2. Python version: 3.8.18
+ 2. Python version: 3.10.13
 
 ### 執行步驟
  1. 開啟Terminal
