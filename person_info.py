@@ -4,14 +4,14 @@ import requests
 import streamlit as st
 
 data = {
-    "transportatino":"567",
-    "score": {
-        "chinese": 0,
-        "english": 0,
-        "mathA": 0,
-        "mathB": 0,
-        "science": 0,
-        "social": 0
+    "transportation":"567",
+    "info": {
+        "國": {"score": 0, "rank": ""},
+        "英": {"score": 0, "rank": ""},
+        "數A": {"score": 0, "rank": ""},
+        "數B": {"score": 0, "rank": ""},
+        "自": {"score": 0, "rank": ""},
+        "社": {"score": 0, "rank": ""}
     },
     "hope_department": "888",
 }
@@ -43,13 +43,13 @@ def person_page():
     submit = cols7[1].button('修改', use_container_width=True)
     
     if submit:
-        data["score"]["chinese"] = chinese_score
-        data["score"]["english"] = english_score
-        data["score"]["mathA"] = mathA_score
-        data["score"]["mathB"] = mathB_score
-        data["score"]["science"] = science_score
-        data["score"]["social"] = social_score
-        print(data)
+        data["info"]["國"]["score"] = chinese_score
+        data["info"]["英"]["score"] = english_score
+        data["info"]["數A"]["score"] = mathA_score
+        data["info"]["數B"]["score"] = mathB_score
+        data["info"]["自"]["score"] = science_score
+        data["info"]["社"]["score"] = social_score
+        #print(data)
         
         response = requests.post("http://127.0.0.1:8000/getdata", data=json.dumps(data))
         if response.status_code == 200:

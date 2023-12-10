@@ -37,7 +37,7 @@ def analyze_page():
     st.subheader('落點分析')
     st.text('')
     # 讀取xlsx檔案
-    file_path = '001.xlsx'  # 請替換成你的檔案路徑
+    file_path = 'info/001.xlsx'  # 請替換成你的檔案路徑
 
     # 使用pandas的read_excel方法讀取檔案
     data = pd.read_excel(file_path)
