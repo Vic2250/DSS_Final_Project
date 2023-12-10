@@ -1,4 +1,20 @@
+import json
+
+import requests
 import streamlit as st
+
+data = {
+    "transportatino":"",
+    "score": {
+        "chinese": 0,
+        "english": 0,
+        "mathA": 0,
+        "mathB": 0,
+        "science": 0,
+        "social": 0
+    },
+    "hope department": "",
+}
 
 def person_page():
     st.text('')
@@ -25,6 +41,18 @@ def person_page():
     social_score = cols6[1].number_input('社', min_value=0, max_value=15, step=1, label_visibility='collapsed')
     cols7 = st.columns([0.8, 0.2])
     submit = cols7[1].button('修改', use_container_width=True)
+    
+    if submit:
+        data["score"]["chinese"] = chinese_score
+        data["score"]["english"] = english_score
+        data["score"]["mathA"] = mathA_score
+        data["score"]["mathB"] = mathB_score
+        data["score"]["science"] = science_score
+        data["score"]["social"] = social_score
+        
+        response = requests.post("http://127.0.0.1:8000/getdata", json=json.dumps(data))
+        if response.status_code == 200:
+            st.success('輸入成功')
 
 
 if __name__ == '__main__':

@@ -1,11 +1,18 @@
-import random
 import json
+import random
+
 import pandas as pd
 from fastapi import FastAPI, Response
-
+from pydantic import BaseModel
 
 app = FastAPI()
 
+
+class data(BaseModel):
+    transportatino: str
+    score: dict
+    hope_department: str
+    
 
 @app.get('/test')
 def show_graph():
@@ -21,3 +28,8 @@ def show_graph():
 
     # 返回 JSON 格式的數據
     return json_response
+
+
+@app.post('/getdata', status_code=200)
+def get_data(item: data):
+   return{'message': 'success'}
