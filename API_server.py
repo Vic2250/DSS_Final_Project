@@ -12,7 +12,7 @@ class data(BaseModel):
     transportatino: str
     score: dict
     hope_department: str
-    
+
 
 @app.get('/test')
 def show_graph():
@@ -30,6 +30,12 @@ def show_graph():
     return json_response
 
 
-@app.post('/getdata', status_code=200)
+@app.post('/getdata')
 def get_data(item: data):
-   return{'message': 'success'}
+    item_dict = item.dict()
+    # 將字典轉換成 JSON 字串
+    item_json = json.dumps(item_dict)
+    print(item_json)
+    with open('socre.json', 'w') as file:
+        file.write(item_json)
+    return{'message': 'success'}

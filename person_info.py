@@ -4,7 +4,7 @@ import requests
 import streamlit as st
 
 data = {
-    "transportatino":"",
+    "transportatino":"567",
     "score": {
         "chinese": 0,
         "english": 0,
@@ -13,7 +13,7 @@ data = {
         "science": 0,
         "social": 0
     },
-    "hope department": "",
+    "hope_department": "888",
 }
 
 def person_page():
@@ -49,8 +49,9 @@ def person_page():
         data["score"]["mathB"] = mathB_score
         data["score"]["science"] = science_score
         data["score"]["social"] = social_score
+        print(data)
         
-        response = requests.post("http://127.0.0.1:8000/getdata", json=json.dumps(data))
+        response = requests.post("http://127.0.0.1:8000/getdata", data=json.dumps(data))
         if response.status_code == 200:
             st.success('輸入成功')
 
