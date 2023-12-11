@@ -53,7 +53,6 @@ def check_department(data: DataFrame , test: list, index: int):
         # 取得每一列的國、英、數A、數B、自、社、英聽資料
         col0 = row[school]
         col1 = row['國']
-        print(col1)
         if col1 == '':
             break
         if not check_threshold(col1, test[0]):
@@ -128,7 +127,7 @@ def analyze_page():
             "學校" : department_list,
         }
     )
-    cols = st.columns([0.2, 0.8])
+    cols = st.columns([0.2, 1])
     with cols[1]:
         st.dataframe(selected_data, use_container_width=True, hide_index=True)
     #st.write(selected_data)
