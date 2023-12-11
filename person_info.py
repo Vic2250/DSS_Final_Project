@@ -11,10 +11,15 @@ data = {
         "數A": {"score": 0, "rank": ""},
         "數B": {"score": 0, "rank": ""},
         "自": {"score": 0, "rank": ""},
-        "社": {"score": 0, "rank": ""}
+        "社": {"score": 0, "rank": ""},
     },
+    "listen" : {"score": "", "rank": ""},
     "hope_department": "888",
 }
+
+#英聽成績
+listen_score = ["A", "B", "C", "F"]
+
 
 def person_page():
     st.text('')
@@ -39,8 +44,12 @@ def person_page():
     cols6 = st.columns([0.1, 0.9])
     label6 = cols6[0].text('社')
     social_score = cols6[1].number_input('社', min_value=0, max_value=15, step=1, label_visibility='collapsed')
-    cols7 = st.columns([0.8, 0.2])
-    submit = cols7[1].button('修改', use_container_width=True)
+    cols7 = st.columns([0.1, 0.9])
+    label7 = cols7[0].text('英聽')
+    listen_selectbox = cols7[1].selectbox('英聽', listen_score, index=0, label_visibility='collapsed')
+    cols8 = st.columns([0.8, 0.2])
+    submit = cols8[1].button('修改', use_container_width=True)
+    
     
     if submit:
         data["info"]["國"]["score"] = chinese_score
@@ -49,6 +58,7 @@ def person_page():
         data["info"]["數B"]["score"] = mathB_score
         data["info"]["自"]["score"] = science_score
         data["info"]["社"]["score"] = social_score
+        data["listen"]["score"] = listen_selectbox
         #print(data)
         
         response = requests.post("http://127.0.0.1:8000/getdata", data=json.dumps(data))
