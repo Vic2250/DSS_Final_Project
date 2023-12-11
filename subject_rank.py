@@ -9,8 +9,9 @@ def ranking_page():
     st.text('')
     st.subheader('各科級距')
     st.text('')
-    response = requests.get('http://127.0.0.1:8000/test').json()
+    response = requests.get("http://127.0.0.1:8000/showgraph").json()
     data = json.loads(response)
+    #print(response)
     df = pd.DataFrame(data)
     cols = st.columns([0.1, 0.7, 0.2])
     with cols[1]:

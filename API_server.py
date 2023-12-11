@@ -17,7 +17,7 @@ class data(BaseModel):
     info: Dict[str, Info]
     hope_department: str
 
-item_dict = {}
+all_score = {}
 
 grading_criteria = {
     '國': {
@@ -58,33 +58,37 @@ grading_criteria = {
     },
 }
 
-@app.get('/test')
+@app.get('/showgraph')
 def show_graph():
+    global all_score
+    scores_list = []
+    
     df = pd.DataFrame(
         {
             "科目": ["國", "英", "數A", "數B", "自", "社"],
-            "分數": [random.randint(0, 15) for _ in range(6)],
-            "等第": [random.choice(["底標", "後標", "均標", "前標", "頂標"]) for _ in range(6)]
+            "分數": [all_score["info"]["國"]["score"], all_score["info"]["英"]["score"], all_score["info"]["數A"]["score"], all_score["info"]["數B"]["score"], all_score["info"]["自"]["score"], all_score["info"]["社"]["score"]],
+            "等第": [all_score["info"]["國"]["rank"], all_score["info"]["英"]["rank"], all_score["info"]["數A"]["rank"], all_score["info"]["數B"]["rank"], all_score["info"]["自"]["rank"], all_score["info"]["社"]["rank"]]
         }
     )
     # 將 DataFrame 轉換為 JSON 格式
     json_response = json.dumps(df.to_dict(orient="records"))
-    print("1" + json_response)
+ 
     # 返回 JSON 格式的數據
     return json_response
 
 
+
 @app.post('/getdata')
 def get_data(item: data):
-    item_dict = item.dict()
+    global all_score
+    request = item.dict()
     
     #比對等第
-    item_dict = compare_ranking(item_dict)
+    item_dict = compare_ranking(request)
+    all_score = item_dict.copy()
     
     # 將字典轉換成 JSON 字串
-    return_to_json(item_dict)
-    
-    item_json = show_graph(item_dict)
+    item_json = return_to_json(item_dict)
     return item_json
 
 
@@ -95,7 +99,7 @@ def return_to_json(item_dict):
     #print(item_json)
     with open('socre.json', 'w') as file:
         file.write(item_json)
-    print('3' + item_json)
+        
     return item_json
 
 def compare_ranking(item_dict):
@@ -114,16 +118,3 @@ def compare_ranking(item_dict):
     return item_dict
 
 
-def show_graph(item_dict):
-    df = pd.DataFrame(
-        {
-            "科目": ["國", "英", "數A", "數B", "自", "社"],
-            "分數": [item_dict['info']['國']['score'], item_dict['info']['英']['score'], item_dict['info']['數A']['score'], item_dict['info']['數B']['score'], item_dict['info']['自']['score'], item_dict['info']['社']['score']],
-            "等第": [item_dict['info']['國']['rank'], item_dict['info']['英']['rank'], item_dict['info']['數A']['rank'], item_dict['info']['數B']['rank'], item_dict['info']['自']['rank'], item_dict['info']['社']['rank']]
-        }
-    )
-    # 將 DataFrame 轉換為 JSON 格式
-    json_response = json.dumps(df.to_dict(orient="records"))
-    print("2" + json_response)
-    # 返回 JSON 格式的數據
-    return json_response
