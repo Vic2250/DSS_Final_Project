@@ -21,3 +21,10 @@
  ```python
  streamlit run index.py
  ```
+
+#### 或是
+
+ 1. Terminal1: 啟動後台
+ ```python
+ python excute.py
+ ```
