@@ -10,7 +10,7 @@
 
  2. 安裝套件
  ```python
- pip install -r requirements.txt
+ pip3 install -r requirements.txt
  ```
  3. Terminal1: 啟動後台
  ```python
