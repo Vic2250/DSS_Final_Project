@@ -14,7 +14,7 @@ class listen_dict(BaseModel):
     score: str
     rank: str
 class data(BaseModel):
-    transportation: str
+    transportation: int
     info: Dict[str, Info]
     listen: listen_dict
     hope_department: str

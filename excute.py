@@ -40,6 +40,7 @@ try:
 except KeyboardInterrupt:
     print(color.RED + '[*]Stopping FastAPI server...' + color.END)
     fastapi_thread.join()
+    fastapi_thread._stop()
     
 try:
     # 等待 FastAPI 伺服器退出
@@ -47,3 +48,5 @@ try:
 except KeyboardInterrupt:
     print(color.RED + '[*]Stopping Streamlit app...' + color.END)
     streamlit_thread.join()
+    streamlit_thread._stop()
+    

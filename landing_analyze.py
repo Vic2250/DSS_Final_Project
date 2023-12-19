@@ -9,7 +9,7 @@ import logging
 department_list = []
 school_list = []
 excel_files = []
-file_path = 'info/'  # 請替換成你的檔案路徑
+file_path = 'dataset/'  # 請替換成你的檔案路徑
 class color:
     GREEN = '\033[92m'
     RED = '\033[91m'
@@ -43,47 +43,51 @@ def check_threshold(text, score):
         else:
             return False
 
-def check_department(data: DataFrame , test: list, index: int):
+def check_department(data: DataFrame , test: list, index: str):
     global department_list
     global school_list
     department_list = []
-    school = school_list[index]
-    print(school)
+    school = index
+    #print(school)
     for index, row in data.iloc[1:].iterrows():
         # 取得每一列的國、英、數A、數B、自、社、英聽資料
-        col0 = row[school]
+        col_school = row["學校"]
+        col0 = row["科系"]
         col1 = row['國']
-        if col1 == '':
-            break
-        if not check_threshold(col1, test[0]):
-            print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+        if col_school == school:
+            if col1 == '':
+                break
+            if not check_threshold(col1, test[0]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            col2 = row['英']
+            if not check_threshold(col2, test[1]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            col3 = row['數A']
+            if not check_threshold(col3, test[2]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            col4 = row['數B']
+            if not check_threshold(col4, test[3]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            col5 = row['自']
+            if not check_threshold(col5, test[4]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            col6 = row['社']
+            if not check_threshold(col6, test[5]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            col7 = row['英聽']
+            if not check_threshold(col7, test[6]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            department_list.append(col0)
+            print(color.GREEN, "[+]通過 ", color.END, f'{col0}')
+        else:
             continue
-        col2 = row['英']
-        if not check_threshold(col2, test[1]):
-            print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-            continue
-        col3 = row['數A']
-        if not check_threshold(col3, test[2]):
-            print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-            continue
-        col4 = row['數B']
-        if not check_threshold(col4, test[3]):
-            print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-            continue
-        col5 = row['自']
-        if not check_threshold(col5, test[4]):
-            print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-            continue
-        col6 = row['社']
-        if not check_threshold(col6, test[5]):
-            print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-            continue
-        col7 = row['英聽']
-        if not check_threshold(col7, test[6]):
-            print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-            continue
-        department_list.append(col0)
-        print(color.GREEN, "[+]通過 ", color.END, f'{col0}')
 
     return department_list
 
@@ -116,10 +120,10 @@ def analyze_page():
     #print(test)
     # 選擇框中的選項
     selected_option = st.selectbox('學校', school_list, index=0)
-    index = school_list.index(selected_option)
+    
     #print(file_path + excel_files[index])
-    data = pd.read_excel(file_path + excel_files[index], keep_default_na=False)
-    check_department(data, test, index)   
+    data = pd.read_excel(file_path + excel_files[0], keep_default_na=False)
+    check_department(data, test, selected_option)   
     # 根據選擇的選項生成相應的表格
     selected_data = pd.DataFrame(
         {
@@ -137,6 +141,21 @@ def read_excel_files_in_folder(folder_path):
    
     return excel_files
 
+#新版dataset
+def read_path():
+    global school_list
+    global excel_files
+    file_path =  "dataset/"  # 請替換成你的檔案路徑
+    excel_files = os.listdir(file_path)
+    print(excel_files)
+    school_list = []
+    info = pd.read_excel(file_path + excel_files[0])
+    for index, row in info.iloc[1:].iterrows():
+        if row.iloc[1] not in school_list:
+            school_list.append(row.iloc[1])
+
+#舊版info
+"""
 def read_path():
     global excel_files
     global school_list
@@ -156,6 +175,7 @@ def read_path():
                 v2 = info.keys()[1]
                 school_list.append(v2)
     #print(school_list)
+    """
 
 if __name__ == '__main__':
     analyze_page()

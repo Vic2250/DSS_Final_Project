@@ -4,7 +4,7 @@ import requests
 import streamlit as st
 
 data = {
-    "transportation":"567",
+    "transportation": 0,
     "info": {
         "國": {"score": 0, "rank": ""},
         "英": {"score": 0, "rank": ""},
@@ -20,6 +20,8 @@ data = {
 #英聽成績
 listen_score = ["A", "B", "C", "F"]
 
+#系所類別
+department = ["文學院", "理學院", "社會科學院"]
 
 def person_page():
     st.text('')
@@ -47,6 +49,12 @@ def person_page():
     cols7 = st.columns([0.1, 0.9])
     label7 = cols7[0].text('英聽')
     listen_selectbox = cols7[1].selectbox('英聽', listen_score, index=0, label_visibility='collapsed')
+    cols9 = st.columns([0.1, 0.9])
+    label9 = cols9[0].text('期望交通距離')
+    transportation = cols9[1].number_input('期望交通距離(m)', min_value=0, max_value=10000, step=1, label_visibility='collapsed')
+    cols10 = st.columns([0.1, 0.9])
+    label10 = cols10[0].text('期望系所')
+    hope_department = cols10[1].selectbox('期望系所', department, index = 0, label_visibility='collapsed')
     cols8 = st.columns([0.8, 0.2])
     submit = cols8[1].button('修改', use_container_width=True)
     
@@ -59,6 +67,8 @@ def person_page():
         data["info"]["自"]["score"] = science_score
         data["info"]["社"]["score"] = social_score
         data["listen"]["score"] = listen_selectbox
+        data["transportation"] = transportation
+        data["hope_department"] = hope_department
         #print(data)
         
         response = requests.post("http://127.0.0.1:8000/getdata", data=json.dumps(data))
