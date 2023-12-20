@@ -5,131 +5,118 @@ from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from typing import Dict
 
+
 app = FastAPI()
 
-class Info(BaseModel):
-    score: int
-    rank: str
-class listen_dict(BaseModel):
-    score: str
-    rank: str
-class data(BaseModel):
-    transportation: int
-    info: Dict[str, Info]
-    listen: listen_dict
-    hope_department: str
 
-all_score = {}
-
-grading_criteria = {
-    '國': {
-        '底標': 0,
-        '後標': 4,
-        '均標': 5,
-        '前標': 7,
-        '頂標': 12
-    },
-    '英': {
-        '底標': 0,
-        '後標': 4,
-        '均標': 5,
-        '前標': 7,
-        '頂標': 12
-    },
-    '數A': {
-        '底標': 0,
-        '後標': 4,
-        '均標': 5,
-        '前標': 7,
-        '頂標': 12
-    },
-    '數B': {
-        '底標': 0,
-        '後標': 4,
-        '均標': 5,
-        '前標': 7,
-        '頂標': 12
-    },
-    '自': {
-        '底標': 0,
-        '後標': 4,
-        '均標': 5,
-        '前標': 7,
-        '頂標': 12
-    },
-    '社': {
-        '底標': 0,
-        '後標': 4,
-        '均標': 5,
-        '前標': 7,
-        '頂標': 12
-    },
-}
-
-@app.get('/showgraph')
-def show_graph():
-    global all_score
-    
-    df = pd.DataFrame(
-        {
-            "科目": ["國", "英", "數A", "數B", "自", "社", "英聽"],
-            "分數": [str(all_score["info"]["國"]["score"]), str(all_score["info"]["英"]["score"]), str(all_score["info"]["數A"]["score"]), str(all_score["info"]["數B"]["score"]), str(all_score["info"]["自"]["score"]), str(all_score["info"]["社"]["score"]), all_score["listen"]["score"]],
-            "等第": [all_score["info"]["國"]["rank"], all_score["info"]["英"]["rank"], all_score["info"]["數A"]["rank"], all_score["info"]["數B"]["rank"], all_score["info"]["自"]["rank"], all_score["info"]["社"]["rank"], all_score["listen"]["rank"]],
-        }
-    )
-    # 將 DataFrame 轉換為 JSON 格式
-    json_response = json.dumps(df.to_dict(orient="records"))
- 
-    # 返回 JSON 格式的數據
-    return json_response
+class PersonInfo(BaseModel):
+    chinese: int
+    english: int
+    mathA: int
+    mathB: int
+    science: int
+    social: int
+    listen: str
+    interest: list
 
 
+def get_standard():
+    # 讀取Excel文件
+    excel_file = 'standard.xlsx'
+    data = pd.read_excel(excel_file, header=0)
 
-@app.post('/getdata')
-def get_data(item: data):
-    global all_score
-    request = item.dict()
-    
-    #比對等第
-    item_dict = compare_ranking(request)
-    all_score = item_dict.copy()
-    
-    # 將字典轉換成 JSON 字串
-    item_json = return_to_json(item_dict)
-    return item_json
+    # 找出'112'列至第一個NaN的列數
+    start_row = data[data['科目'] == 112].index[0]  # 找到'112'所在的行數
+    end_row = data['科目'].isnull().idxmax()  # 找到第一個NaN所在的行數
+    # 提取資料
+    required_data = data.loc[start_row:end_row]  # 使用loc方法切片取出資料
+    cols = required_data.columns.tolist()
+    standard = {}
 
-
-def return_to_json(item_dict):
-    
-    item_json = json.dumps(item_dict, ensure_ascii=False)
-    
-    #print(item_json)
-    with open('score.json', 'w') as file:
-        file.write(item_json)
-        
-    return item_json
-
-def compare_ranking(item_dict):
-    for key, value in item_dict['info'].items():
-        if value['score'] >= grading_criteria[key]['頂標']:
-           item_dict['info'][key]['rank'] = '頂標'
-        elif value['score'] >= grading_criteria[key]['前標']:
-            item_dict['info'][key]['rank'] = '前標'
-        elif value['score'] >= grading_criteria[key]['均標']:
-            item_dict['info'][key]['rank'] = '均標'
-        elif value['score'] >= grading_criteria[key]['後標']:
-            item_dict['info'][key]['rank'] = '後標'
-        else:
-            item_dict['info'][key]['rank'] = '底標'
-            
-    if item_dict['listen']['score'] == 'A':
-        item_dict['listen']['rank'] = '頂標'
-    elif item_dict['listen']['score'] == 'B':
-        item_dict['listen']['rank'] = '前標'
-    elif item_dict['listen']['score'] == 'C':
-        item_dict['listen']['rank'] = '均標'
-    else:
-        item_dict['listen']['rank'] = '後標'
-    return item_dict
+    i = 0
+    while i < len(cols) - 2:
+        result_dict = {}
+        standard_values = required_data[cols[1]].tolist()
+        subject_values = required_data[cols[i + 2]].tolist()
+        for j in range(len(standard_values)):
+            if standard_values[j] not in result_dict:
+                result_dict[standard_values[j]] = {}
+            result_dict[standard_values[j]] = subject_values[j]
+        standard[cols[i + 2]] = result_dict
+        i += 2
+    standard.pop('數學', None)
+    return(standard)
 
 
+def trans_standard(info, standard):
+    comparison = {'chinese': '國文', 'english':'英文', 'mathA': '數學A', 
+                  'mathB': '數學B', 'science': '自然', 'social': '社會'}
+    subject_standard = {}
+    for key in info:
+        if key in comparison:
+            subject = standard[comparison[key]]
+            if info[key] >= subject['底標']:
+                if info[key] >= subject['後標']:
+                    if info[key] >= subject['均標']:
+                        if info[key] >= subject['前標']:
+                            if info[key] >= subject['頂標']:
+                                subject_standard[key] = '頂標'
+                            else:
+                                subject_standard[key] = '前標'
+                        else:
+                            subject_standard[key] = '均標'
+                    else:
+                        subject_standard[key] = '後標'
+                else:
+                    subject_standard[key] = '底標'
+            else:
+                subject_standard[key] = '底標'
+    return subject_standard
+
+
+@app.get('/get_info')
+def get_info():
+    try:
+        with open('score.json', 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        return data
+    except FileNotFoundError:
+        data = {
+            "國文": {"score": 0, "rank": "Bottom"},
+            "英文": {"score": 0, "rank": "Bottom"},
+            "數A": {"score": 0, "rank": "Bottom"},
+            "數B": {"score": 0,"rank": "Bottom"},
+            "自然": {"score": 0,"rank": "Bottom"},
+            "社會": {"score": 0,"rank": "Bottom"},
+            "英聽": {"score": 3}}
+        return data
+
+@app.post('/update_info')
+def update_info(info: PersonInfo):
+    get_value = info.dict()
+    standard = get_standard()
+    subject_standard = trans_standard(get_value, standard)
+    data = {
+        '國文': {"score": get_value['chinese'], "rank": subject_standard['chinese']},
+        '英文': {"score": get_value['english'], "rank": subject_standard['english']},
+        '數A': {"score": get_value['mathA'], "rank": subject_standard['mathA']},
+        '數B': {"score": get_value['mathB'], "rank": subject_standard['mathB']},
+        '自然': {"score": get_value['science'], "rank": subject_standard['science']},
+        '社會': {"score": get_value['social'], "rank": subject_standard['social']},
+        '英聽': {"score": get_value['listen']}
+    }
+    with open('score.json', 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+    print("成功修改")
+    return {"Message": "成功修改"}
+
+
+@app.get('/get_subject_ranking')
+def get_rank():
+    standard = get_standard()
+    # 將標籤名稱修改為更簡潔的形式 (頂標-> 頂 ...依此類推)
+    updated_structure = {}
+    for subject, scores in standard.items():
+        updated_scores = {key.replace('標', ''): value for key, value in scores.items()}
+        updated_structure[subject] = updated_scores
+    return updated_structure

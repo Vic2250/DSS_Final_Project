@@ -1,34 +1,139 @@
-import streamlit as st
-import pandas as pd
-from pandas import DataFrame
-import os
-import requests
-import json
 import logging
+import requests
+import pandas as pd
+import streamlit as st
+from pathlib import Path
+from pandas import DataFrame
+
 
 department_list = []
-school_list = []
-excel_files = []
-file_path = 'dataset/'  # 請替換成你的檔案路徑
+try:
+    response = requests.get('http://127.0.0.1:8000/get_subject_ranking')
+    if response.status_code == 200:
+        subject_ranking = response.json()
+except:
+    subject_ranking = {'國文': {'頂': 13, '前': 12, '均': 11, '後': 9, '底': 8}, 
+                       '英文': {'頂': 13, '前': 11, '均': 8, '後': 5, ' 底': 4}, 
+                       '數學A': {'頂': 11, '前': 9, '均': 7, '後': 5, '底': 4}, 
+                       '數學B': {'頂': 12, '前': 10, '均': 7, '後': 4, '底': 3}, 
+                       '社會': {'頂': 12, '前': 11, '均': 9, '後': 8, '底': 6}, 
+                       '自然': {'頂': 13, '前': 11, '均': 9, '後': 6, '底': 5}}
+
+
 class color:
     GREEN = '\033[92m'
     RED = '\033[91m'
     END = '\033[0m'
 
-def score_weight(word):
-    if word == '底':
-        return 0
-    elif word == '後':
-        return 4
-    elif word == '均':
-        return 5
-    elif word == '前':
-        return 7
-    elif word == '頂':
-        return 12
+
+def get_info():
+    try:
+        response = requests.get('http://127.0.0.1:8000/get_info')
+        if response.status_code == 200:
+            return response.json()
+    except:
+        st.warning('後臺程式未回應，請檢察後臺程式狀態')
+        data = {
+            "國文": {"score": 0,"rank": "底標"},
+            "英文": {"score": 0,"rank": "底標"},
+            "數A": {"score": 0,"rank": "底標"},
+            "數B": {"score": 0,"rank": "底標"},
+            "自然": {"score": 0,"rank": "底標"},
+            "社會": {"score": 0,"rank": "底標"},
+            "英聽": {"score": "F"}
+            }
+        return data
 
 
-def check_threshold(text, score):
+def read_path():
+    file_path = Path("dataset/")
+    excel_files = [file for file in file_path.iterdir() if file.suffix == '.xlsx']  # 取得所有xlsx檔案
+    school_list = []
+    info = pd.read_excel(excel_files[0])  # 讀取第一個Excel檔案
+    for index, row in info.iloc[1:].iterrows():
+        if row.iloc[1] not in school_list:
+            school_list.append(row.iloc[1])
+    return school_list
+
+
+def analyze_page():
+    st.text('')
+    st.text('')
+    st.subheader('落點分析')
+    st.text('')
+    school_list = read_path()
+    cols = st.columns([0.8, 0.2])
+    with cols[0]:
+        condition = st.multiselect('篩選條件', ['公立', '距離'], key='selection_condition')
+    with cols[1]:
+        st.subheader('')
+        filter = st.button('推薦?')
+    selected_option = st.selectbox('學校', school_list, index=0)
+    score = []
+    # 獲取輸入的成績
+    info_data = get_info()
+    for key in info_data:
+        score.append(info_data[key]['score'])
+
+    # 讀取檔案excel檔
+    file_path = Path("dataset/")  # 替換成你的檔案路徑
+    excel_files = list(file_path.glob("*.xlsx"))
+    data = pd.read_excel(excel_files[0], keep_default_na=False)
+
+    # 推薦的列表
+    check_department(data, score, selected_option) 
+    selected_data = pd.DataFrame(
+        {
+            "編號" : [i for i in range(1, len(department_list)+1)],
+            "學校" : department_list,
+        }
+    )
+    cols = st.columns([0.2, 1])
+    # 全部符合的列表
+    with cols[1]:
+        st.dataframe(selected_data, use_container_width=True, hide_index=True)
+
+
+# 檢查科系是否通過門檻標準
+def check_department(data: DataFrame , score: list, index: str):
+    global department_list
+    department_list = []
+    school = index
+    for index, row in data.iloc[1:].iterrows():
+        # 取得每一列的國、英、數A、數B、自、社、英聽資料
+        col_school = row["學校"]
+        col0 = row["科系"]
+        if col_school == school:
+            if not check_threshold('國文', row['國'], score[0]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue 
+            if not check_threshold('英文', row['英'], score[1]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            if not check_threshold('數學A', row['數A'], score[2]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            if not check_threshold('數學B', row['數B'], score[3]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            if not check_threshold('自然', row['自'], score[4]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            if not check_threshold('社會', row['社'], score[5]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            if not check_threshold('英聽', row['英聽'], score[6]):
+                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
+                continue
+            department_list.append(col0)
+            print(color.GREEN, "[+]通過 ", color.END, f'{col0}')
+        else:
+            continue
+    return department_list
+
+
+# 檢查文字內容並判斷是否超過標準
+def check_threshold(subject, text, score):
     if text[0] == '-':
         return True
     elif text[0].isupper():
@@ -37,145 +142,12 @@ def check_threshold(text, score):
         else:
             return False
     else:
-        weight = score_weight(text[0])
+        weight = subject_ranking[subject][text[0]]
         if score >= weight:
             return True
         else:
             return False
 
-def check_department(data: DataFrame , test: list, index: str):
-    global department_list
-    global school_list
-    department_list = []
-    school = index
-    #print(school)
-    for index, row in data.iloc[1:].iterrows():
-        # 取得每一列的國、英、數A、數B、自、社、英聽資料
-        col_school = row["學校"]
-        col0 = row["科系"]
-        col1 = row['國']
-        if col_school == school:
-            if col1 == '':
-                break
-            if not check_threshold(col1, test[0]):
-                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-                continue
-            col2 = row['英']
-            if not check_threshold(col2, test[1]):
-                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-                continue
-            col3 = row['數A']
-            if not check_threshold(col3, test[2]):
-                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-                continue
-            col4 = row['數B']
-            if not check_threshold(col4, test[3]):
-                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-                continue
-            col5 = row['自']
-            if not check_threshold(col5, test[4]):
-                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-                continue
-            col6 = row['社']
-            if not check_threshold(col6, test[5]):
-                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-                continue
-            col7 = row['英聽']
-            if not check_threshold(col7, test[6]):
-                print(color.RED, "[-]未通過 ", color.END, f'{col0}')
-                continue
-            department_list.append(col0)
-            print(color.GREEN, "[+]通過 ", color.END, f'{col0}')
-        else:
-            continue
-
-    return department_list
-
-def analyze_page():
-    global school_list
-    global excel_files
-    global department_list
-    global file_path
-    
-    logging.basicConfig(level=logging.INFO)
-    read_path()
-    
-    st.text('')
-    st.text('')
-    st.subheader('落點分析')
-    st.text('')
-    
-    #data = pd.read_excel(file_path + excel_files[0])
-   
-    #test = [4, 5, 3, 4, 5, 4, 'B']
-    test = []
-    with open('score.json', 'r') as file:
-        score_data = json.load(file)
-    
-    info_data = score_data['info']
-    for key, value in info_data.items():
-        test.append(value['score'])
-    test.append(score_data['listen']['score'])
-    
-    #print(test)
-    # 選擇框中的選項
-    selected_option = st.selectbox('學校', school_list, index=0)
-    
-    #print(file_path + excel_files[index])
-    data = pd.read_excel(file_path + excel_files[0], keep_default_na=False)
-    check_department(data, test, selected_option)   
-    # 根據選擇的選項生成相應的表格
-    selected_data = pd.DataFrame(
-        {
-            "編號" : [i for i in range(1, len(department_list)+1)],
-            "學校" : department_list,
-        }
-    )
-    cols = st.columns([0.2, 1])
-    with cols[1]:
-        st.dataframe(selected_data, use_container_width=True, hide_index=True)
-    #st.write(selected_data)
-    
-
-def read_excel_files_in_folder(folder_path):
-   
-    return excel_files
-
-#新版dataset
-def read_path():
-    global school_list
-    global excel_files
-    file_path =  "dataset/"  # 請替換成你的檔案路徑
-    excel_files = os.listdir(file_path)
-    print(excel_files)
-    school_list = []
-    info = pd.read_excel(file_path + excel_files[0])
-    for index, row in info.iloc[1:].iterrows():
-        if row.iloc[1] not in school_list:
-            school_list.append(row.iloc[1])
-
-#舊版info
-"""
-def read_path():
-    global excel_files
-    global school_list
-    file_path = 'info/'  # 請替換成你的檔案路徑
-    excel_files = os.listdir(file_path)
-    # 使用pandas的read_excel方法讀取檔案
-    #print(excel_files)
-    school_list = []
-    for file in excel_files:
-        if file.endswith(".xlsx") or file.endswith(".xls"):
-            if file.startswith("j"):
-                info = pd.read_excel(file_path + file)
-                v2 = info.keys()[2]
-                school_list.append(v2)
-            else:
-                info = pd.read_excel(file_path + file)
-                v2 = info.keys()[1]
-                school_list.append(v2)
-    #print(school_list)
-    """
 
 if __name__ == '__main__':
     analyze_page()
