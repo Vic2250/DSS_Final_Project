@@ -81,6 +81,7 @@ def get_info():
             data = json.load(file)
         return data
     except FileNotFoundError:
+        
         data = {
             "國文": {"score": 0, "rank": "Bottom"},
             "英文": {"score": 0, "rank": "Bottom"},
@@ -89,6 +90,7 @@ def get_info():
             "自然": {"score": 0,"rank": "Bottom"},
             "社會": {"score": 0,"rank": "Bottom"},
             "英聽": {"score": 3}}
+       
         return data
 
 @app.post('/update_info')
