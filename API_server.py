@@ -89,7 +89,9 @@ def get_info():
             "數B": {"score": 0,"rank": "Bottom"},
             "自然": {"score": 0,"rank": "Bottom"},
             "社會": {"score": 0,"rank": "Bottom"},
-            "英聽": {"score": 3}}
+            "英聽": {"score": 'F'},
+            "興趣": []
+        }
        
         return data
 
@@ -105,11 +107,13 @@ def update_info(info: PersonInfo):
         '數B': {"score": get_value['mathB'], "rank": subject_standard['mathB']},
         '自然': {"score": get_value['science'], "rank": subject_standard['science']},
         '社會': {"score": get_value['social'], "rank": subject_standard['social']},
-        '英聽': {"score": get_value['listen']}
+        '英聽': {"score": get_value['listen']},
+        '興趣': [i for i in get_value['interest']] 
     }
+    print()
     with open('score.json', 'w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
-    print("成功修改")
+    print("成功修改: " )
     return {"Message": "成功修改"}
 
 

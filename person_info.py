@@ -51,27 +51,32 @@ def person_page():
     title[0].header('興趣')
     
     #
+    cb = {}
     col1, col2, col3, col4 = st.columns(4)
     with col1:  
-        st.checkbox('資訊')
-        st.checkbox('金融')
-        st.checkbox('醫療')
+        cb['資訊'] = st.checkbox('資訊')
+        cb['金融'] = st.checkbox('金融')
+        cb['醫療'] = st.checkbox('醫療')
     with col2:
-        st.checkbox('語文')
-        st.checkbox('藝術')
-        st.checkbox('管理')
+        cb['語文'] = st.checkbox('語文')
+        cb['藝術'] = st.checkbox('藝術')
+        cb['管理'] = st.checkbox('管理')
     with col3:
-        st.checkbox('傳播')
-        st.checkbox('材料')
-        st.checkbox('電通')
+        cb['傳播'] = st.checkbox('傳播')
+        cb['材料'] = st.checkbox('材料')
+        cb['電通'] = st.checkbox('電通')
     with col4:
-        st.checkbox('建築')
-        st.checkbox('法政')
-        st.checkbox('其他')
+        cb['建築'] = st.checkbox('建築')
+        cb['法政'] = st.checkbox('法政')
+        cb['其他'] = st.checkbox('其他')
     #
     a, b, cols8, c, d = st.columns(5)
-    submit = cols8.button('修改', use_container_width=True)
+    submit = cols8.button('送出', use_container_width=True)
     if submit:
+        interest_list = []
+        for i in cb:
+            if cb[i]:
+                interest_list.append(i)
         info = {
             "chinese": chinese_score,
             "english": english_score,
@@ -80,8 +85,9 @@ def person_page():
             "science": science_score,
             "social": social_score,
             "listen": listen_score,
-            "interest": []
+            "interest": interest_list
         }
+        
         update_info(info)
 
 

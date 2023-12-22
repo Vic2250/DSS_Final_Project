@@ -10,6 +10,7 @@ def ranking_page():
     st.subheader('各科級距')
     st.text('')
     data = get_info()
+    del data['興趣']
     df = pd.DataFrame(data).T.reset_index()
     df.columns = ['科目', '分數', '等第']  # 設置欄位名稱
     cols = st.columns([0.1, 0.7, 0.2])
@@ -19,7 +20,7 @@ def ranking_page():
     # 如果可以的話可以產一個可圖表(有關於分數或是級距的圖表(但不知道如何畫以及要畫成怎樣))
 
 
-def get_info():
+def get_info() -> dict:
     try:
         response = requests.get('http://127.0.0.1:8000/get_info')
         if response.status_code == 200:

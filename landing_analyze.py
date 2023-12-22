@@ -5,12 +5,14 @@ import streamlit as st
 from pathlib import Path
 from pandas import DataFrame
 import time
+import re
 
 #全域變數
 subject_ranking = {}
 department_list = []
 distance_list = {}
 school_list = []
+interest = True
 
 #獲取成績對應標?
 try:
@@ -63,7 +65,7 @@ def read_path():
 
 
 def analyze_page():
-    global department_list, school_list
+    global department_list, school_list, interest
     st.text('')
     st.text('')
     st.subheader('落點分析')
@@ -73,15 +75,20 @@ def analyze_page():
     with cols[0]:
         condition = st.multiselect('篩選條件', ['公立', '距離'], key='selection_condition')
     with cols[1]:
-        st.subheader('')
         all_list = st.checkbox('列出全部')
+        interest = st.checkbox('興趣篩選',value=interest)
     if not all_list:
         selected_option = st.selectbox('學校', school_list, index=0)
     score = []
+    interest_list = []
     # 獲取輸入的成績
     info_data = get_info()
     for key in info_data:
-        score.append(info_data[key]['score'])
+        if key != '興趣':
+            score.append(info_data[key]['score'])
+        else:
+            for n in info_data['興趣']:
+                interest_list.append(n)
     
     # 讀取檔案excel檔
     file_path = Path("dataset/")  # 替換成你的檔案路徑
@@ -94,7 +101,8 @@ def analyze_page():
         # 推薦的列表
         with st.spinner("請稍後..."):
             time.sleep(1)
-            check_department(data, score, selected_option) 
+            check_department(data, score, selected_option, interest_list) 
+            sec_check(data, score, selected_option)
             selected_data = pd.DataFrame(
                 {
                     "編號" : [i for i in range(1, len(department_list)+1)],
@@ -110,29 +118,30 @@ def analyze_page():
         school_list2 = []
         
         ###
-        
         with st.spinner("請稍後..."):
-            
             distance = "距離"
             public = "國立"
             if distance in condition:
                 school_list2 = sorted(school_list, key=lambda x:distance_list[x])
                 for school in school_list2:
-                    check_department(data, score, school)
+                    check_department(data, score, school, interest_list)
+                    sec_check(data, score, school)
                     new_expander = st.expander(school)
                     expander_list.append(new_expander)
             else:
                 for school in school_list:
-                    check_department(data, score, school)
+                    check_department(data, score, school, interest_list)
+                    sec_check(data, score, school)
                     new_expander = st.expander(school)
                     expander_list.append(new_expander)
-                    
+            
             if public in condition:
                 pass
             ###
         
             for i, expander in enumerate(expander_list):
-                check_department(data, score, school_list[i])
+                check_department(data, score, school_list[i], interest_list)
+                sec_check(data, score, school)
                 with expander:
                     selected_data = pd.DataFrame(
                         {
@@ -148,15 +157,15 @@ def analyze_page():
      
 
 # 檢查科系是否通過門檻標準
-def check_department(data: DataFrame , score: list, index: str)->list:
+def check_department(data: DataFrame , score: list, index: str, intere_list: list)->list:
     global department_list, distance_list
     department_list = []
     school = index
-    for index, row in data.iloc[1:].iterrows():
+    for index, row in data.iloc[0:].iterrows():
         # 取得每一列的國、英、數A、數B、自、社、英聽資料
         col_school = row["學校"]
         col0 = row["科系"]
-        
+        col_depart = row["類別"]
         if col_school == school:
             if not check_threshold('國文', row['國'], score[0]):
                 #print(color.RED, "[-]未通過 ", color.END, f'{col0}')
@@ -179,7 +188,12 @@ def check_department(data: DataFrame , score: list, index: str)->list:
             if not check_threshold('英聽', row['英聽'], score[6]):
                 #print(color.RED, "[-]未通過 ", color.END, f'{col0}')
                 continue
-            department_list.append(col0)
+            
+            if interest:
+                if col_depart in intere_list:
+                    department_list.append(col0)
+            else:
+                department_list.append(col0)
             #print(color.GREEN, "[+]通過   ", color.END, f'{col0}')
         else:
             continue
@@ -187,7 +201,7 @@ def check_department(data: DataFrame , score: list, index: str)->list:
 
 
 # 檢查文字內容並判斷是否超過標準
-def check_threshold(subject, text, score)->bool:
+def check_threshold(subject: str, text: str, score: int)->bool:
     if text[0] == '-':
         return True
     elif text[0].isupper():
@@ -202,6 +216,7 @@ def check_threshold(subject, text, score)->bool:
         else:
             return False
 
+###----###
 def school_distance(data: DataFrame)->dict:
     global distance_list
     for index, row in data.iloc[1:].iterrows():
@@ -212,6 +227,56 @@ def school_distance(data: DataFrame)->dict:
         distance_list[col_school] = int(col_distance)
     
     return distance_list
+
+def sec_check(data: DataFrame, score: list, school: str) -> dict:
+    global department_list
+    a = ["國", "英", "數A", "數B", "自", "社"]
+    pattern = re.compile(r'(' + '|'.join(a) + ')(?:\+(' + '|'.join(a) + '))*(?:=(\d+))?$')
+    score_list = {}
+    count = 0
+    for i in a:
+        score_list[i] = score[count]
+        count+=1
+
+    
+    for index, row in data.iloc[0:].iterrows():
         
+        ##
+        filter = []
+        filter.append(row["篩選一"])
+        filter.append(row["篩選二"])
+        filter.append(row["篩選三"])
+        filter.append(row["篩選四"])
+        filter.append(row["篩選五"])
+        col_school = row["學校"]
+        col_depart = row["科系"]
+        if school == col_school:
+            for n in filter:
+                if n == "-":
+                    break
+                match1 = pattern.match(n)
+                print(match1)
+                if not sec_check_threshold(match1, score_list):
+                    department_list.remove(col_depart)
+                else:
+                    pass
+            
+            
+##
+def sec_check_threshold(match1: re.Match, score: dict) -> bool:
+    if match1 :
+        matched_chars = match1.groups()[:-2]
+        numbers = match1.groups()[-1]  
+        ans = 0
+        for i in matched_chars:  
+            ans = ans + score[i]
+        if ans < int(numbers):
+            return False
+        else:
+            return True
+            
+    return
+        
+ 
 if __name__ == '__main__':
     analyze_page()
