@@ -250,6 +250,8 @@ def sec_check(data: DataFrame, score: list, school: str) -> dict:
         filter.append(row["篩選五"])
         col_school = row["學校"]
         col_depart = row["科系"]
+        if not school in department_list:
+                continue
         if school == col_school:
             for n in filter:
                 if n == "-":
@@ -257,7 +259,10 @@ def sec_check(data: DataFrame, score: list, school: str) -> dict:
                 match1 = pattern.match(n)
                 print(match1)
                 if not sec_check_threshold(match1, score_list):
-                    department_list.remove(col_depart)
+                    if col_depart in department_list:
+                        department_list.remove(col_depart)
+                    else:
+                        pass                       
                 else:
                     pass
             
